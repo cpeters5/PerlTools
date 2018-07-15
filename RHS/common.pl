@@ -8,7 +8,7 @@ use DBD::ODBC;
 #use DB_File;
 use Carp;
 
-	my $dbh = DBI->connect( "DBI:ODBC:Bluenanta") or die( "Could not connect to: $DBI::errstr" );	#webfaction
+	our $dbh = DBI->connect( "DBI:ODBC:Bluenanta") or die( "Could not connect to: $DBI::errstr" );	#webfaction
 	#my $dbh = DBI->connect( "DBI:ODBC:MySQL") or die( "Could not connect to: $DBI::errstr" );		#BlueNanta
 #	my $dbh = DBI->connect( "DBI:ODBC:MYSQL") or die( "Could not connect to: $DBI::errstr" );		#local
 #	my $dbh = DBI->connect( "DBI:MySQL:bluenant_taxo,pax") or die( "Could not connect to: $DBI::errstr" );

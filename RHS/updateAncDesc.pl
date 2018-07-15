@@ -1,6 +1,8 @@
 #----------
 # Initial implementation.
 # Run this script every time a new hybrid is created.
+# Run with new pid parameter if update a single pid.
+# Run without parameter if update all pid not currently in the ancdesc table.
 #----------
 
 use strict;
@@ -14,29 +16,22 @@ my %seed = ();
 my %poll = ();
 
 # Refresh ancdesc for inpout pid
-my $pid = $ARGV[0];
-my $stmt = "select seed_id, pollen_id from orchid_hybrid where pid = ?";
-my @row = $dbh->selectrow_array($stmt,undef,$pid);
-unless (@row) { die "Pid $pid not found in Hybrid"; }
-my ($seed,$poll) = @row; 
-print "$pid, $seed, $poll\n";
-updatedata($pid,$seed,$poll);
 
-exit;
+if ($ARGV[0]) {
+	my $pid = $ARGV[0];
+	my $stmt = "select seed_id, pollen_id from orchid_hybrid where pid = ?";
+	my @row = $dbh->selectrow_array($stmt,undef,$pid);
+	unless (@row) { die "Pid $pid not found in Hybrid"; }
+	my ($seed,$poll) = @row; 
+	print "$pid, $seed, $poll\n";
+	updatedata($pid,$seed,$poll);
+	exit;
+}
 
 &initHybrid();
 
 foreach my $pid (sort keys %pid) {
-    &getASPM("delete from orchid_ancestordescendant where did = $pid"); 
-    &getASPM("insert into orchid_ancestordescendant (pct,aid,did) select pct/2, aid, $pid from orchid_ancestordescendant where did = $seed{$pid};");
-    &getASPM("insert into orchid_ancestordescendant (pct,aid,did) select pct/2, aid, $pid from orchid_ancestordescendant where did = $poll{$pid};");
-    &getASPM("insert into orchid_ancestordescendant (pct,aid,did) values (50, $pid, $seed{$pid})");
-    &getASPM("insert into orchid_ancestordescendant (pct,aid,did) values (50, $pid, $poll{$pid})");
-    # print("insert ignore into orchid_ancestordescendant (pct,aid,did) select pct/2, aid, $pid from orchid_ancestordescendant where did = $seed{$pid};\n");
-    # print("insert ignore into orchid_ancestordescendant (pct,aid,did) select pct/2, aid, $pid from orchid_ancestordescendant where did = $poll{$pid};\n");
-    # print("insert ignore into orchid_ancestordescendant (pct,aid,did) values (50, $pid, $seed{$pid})\n");
-    # print("insert ignore into orchid_ancestordescendant (pct,aid,did) values (50, $pid, $poll{$pid})\n\n");
-    # exit;
+	updatedata($pid, $seed{$pid},$poll{$pid});
     print "$pid = ($seed{$pid} x $poll{$pid}) added\n";
 }
 

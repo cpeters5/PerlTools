@@ -52,16 +52,20 @@ sub initHybrid {
 
 sub updatedata {
 	my ($pid, $seed, $poll) = @_;
-
+	my %aid;
+	
 	&getASPM("delete from orchid_ancestordescendant where did = $pid"); 
 	my $stmt = "select sum(pct)/2, aid from orchid_ancestordescendant where did in ($seed,$poll) group by 2";
     &getASPM($stmt);
     while (my @row = $sth->fetchrow_array()) {
 		$row[0] = nearest(.01,$row[0]);
-		my $stmt = "insert into orchid_ancestordescendant (pct,aid,did) values($row[0],$row[1],$pid)";
+		$aid{$row[1]} = $row[0];
+	}
+	$aid{$seed} += 50;
+	$aid{$poll} += 50;
+	foreach my $aid (sort keys %aid) {
+		my $stmt = "insert into orchid_ancestordescendant (pct,aid,did) values($aid{$aid},$aid,$pid)";
+		print "$aid{$aid}\t$aid\t$pid\n";
 		&getASPM1($stmt);
 	}
-    &getASPM("insert into orchid_ancestordescendant (pct,aid,did) values (50, $seed, $pid)");
-    &getASPM("insert into orchid_ancestordescendant (pct,aid,did) values (50, $poll, $pid)");
-	
 }

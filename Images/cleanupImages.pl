@@ -18,9 +18,10 @@ my $type = $ARGV[0];
 my $imgtype;
 my $stmt;
 my $tab;
-my $mediaroot = 'C:\\projects\\orchids\\git\\static\\utils\\images\\';
-my $discard_file = $mediaroot."\\discard_file";
-my $discard_thmb = $mediaroot."\\discard_thmb";
+my $mediaroot = 'C:/projects/orchids/git/static/utils/images/';
+my $mediaroot = '/home/chariya/webapps/static_media/utils/images/';
+my $discard_file = $mediaroot."discard_file/";
+my $discard_thmb = $mediaroot."discard_thmb/";
 my ($image_dir, $thumb_dir);
 
 system( 'mkdir '.$discard_file ) if ( ! -d $discard_file );
@@ -28,15 +29,15 @@ system( 'mkdir '.$discard_thmb ) if ( ! -d $discard_thmb );
 
 if ($ARGV[0] eq 'species') {
     $tab = "orchid_spcimages";
-    $image_dir = $mediaroot . 'species\\';
-    $thumb_dir = $mediaroot . 'species_thumb\\';
+    $image_dir = $mediaroot . 'species/';
+    $thumb_dir = $mediaroot . 'species_thumb/';
     $type = "spc";
 
 }
 elsif ($ARGV[0] eq 'hybrid') {
     $tab = "orchid_hybimages";
-    $image_dir = $mediaroot . 'hybrid\\';
-    $thumb_dir = $mediaroot . 'hybrid_thumb\\';
+    $image_dir = $mediaroot . 'hybrid/';
+    $thumb_dir = $mediaroot . 'hybrid_thumb/';
     $type = "hyb";
 }
 
@@ -49,20 +50,20 @@ print "Process image objects\n";
 processFiles();
 
 sub processFiles {
-    opendir(my $dh, $thumb_dir) or die "cant open $image_dir : $!\n";
+    opendir(my $dh, $image_dir) or die "cant open $image_dir : $!\n";
     my $i = 0;
     my @filelist = readdir $dh;
-    my $i = 0;
 	foreach (@filelist) {
 	    next if exists $files{$_};
 	    next if $_ !~ /^$type/;
 		print $i++."\t$_\n";
-		my $from = $image_dir .  "$_";
+		my $from = $image_dir .  $_;
 		move $from, $discard_file;
-		my $from_tmb = $thumb_dir  . "$_";
+		my $from_tmb = $thumb_dir  . $_;
 		move $from_tmb, $discard_thmb;
 #        print "move $from_tmb\tto\t$discard_thmb\n"; sleep 1;
 	}
+	print "Moved $i $ARGV[0] image files to discard folder\n";
 }
 
 sub getImages {

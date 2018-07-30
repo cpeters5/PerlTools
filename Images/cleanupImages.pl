@@ -63,7 +63,7 @@ sub processFiles {
 		move $from_tmb, $discard_thmb;
 #        print "move $from_tmb\tto\t$discard_thmb\n"; sleep 1;
 	}
-	print "Moved $i $ARGV[0] image files to discard folder\n";
+	print "\n\tMoved $i $ARGV[0] image files to discard folder\n";
 }
 
 sub getImages {

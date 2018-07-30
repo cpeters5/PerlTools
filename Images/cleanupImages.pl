@@ -1,4 +1,3 @@
-#!C:/Perl/bin Perl
 #use 5.010;
 #----------------
 #  This script go through image tables (species or hybrid) and performs the following

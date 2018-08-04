@@ -9,10 +9,11 @@ use strict;
 use warnings qw(all);
 use autodie;
 use File::Copy;   #Gives you access to the "move" command
+use DBI;
+use DBD::ODBC;
 
-
-require "common.pl";
-our ($sth);
+# require "common.pl";
+my ($sth);
 my (%img,%src,%nam,%fnm,%genus,%gen);
 my $type = $ARGV[0];
 my $imgtype;
@@ -40,6 +41,12 @@ elsif ($ARGV[0] eq 'hybrid') {
     $thumb_dir = $mediaroot . 'hybrid_thumb/';
     $type = "hyb";
 }
+
+# Database connection
+my $dbh = DBI->connect( "DBI:ODBC:Bluenanta") or die( "Could not connect to: $DBI::errstr" );
+my $DB = "orchidroots";
+&getASPM("use $DB");
+
 
 print "Initialize images\n";
 my %files = ();
@@ -82,3 +89,8 @@ sub getImages {
 	}
 }
 
+sub getASPM {
+	my $stmt = shift;
+	$sth = $dbh->prepare( $stmt ) or die( "\n$stmt\nCannot prepare: ", $dbh->errstr(), "\n" );
+	my $rc = $sth->execute() or die("\nDead! \n$stmt\nCannot execute: ", $sth->errstr(),"\n" );
+}

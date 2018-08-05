@@ -8,12 +8,12 @@
 use strict;
 use warnings FATAL => 'all';
 use DBI;
+my $db = "orchidroots";
 # use DBD::ODBC;
 
 # Database connection
 my $dbh = DBI->connect( "DBI:ODBC:Bluenanta") or die( "Could not connect to: $DBI::errstr" );
 # $dbh = DBI->connect( "DBI:mysql:$db:localhost","chariya","imh3r3r3") or die( "Could not connect to: $DBI::errstr" );
-my $db = "orchidroots";
 my ($sth, $sth1);
 &getASPM("use $db");
 

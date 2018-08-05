@@ -20,7 +20,7 @@ my $imgtype;
 my $stmt;
 my $tab;
 my $mediaroot = 'C:/projects/orchids/git/static/utils/images/';
-$mediaroot = '/home/chariya/webapps/static_media/utils/images/';
+ $mediaroot = '/home/chariya/webapps/static_media/utils/images/';
 my $discard_file = $mediaroot."discard_file/";
 my $discard_thmb = $mediaroot."discard_thmb/";
 my ($image_dir, $thumb_dir);

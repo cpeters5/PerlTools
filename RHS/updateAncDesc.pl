@@ -43,7 +43,8 @@ foreach my $pid (sort keys %pid) {
 }
 
 sub initHybrid {
-    my $stmt = "select pid, seed_id, pollen_id from orchid_hybrid where pid not in (select distinct did from orchid_ancestordescendant);";
+    my $stmt = "select pid, seed_id, pollen_id from orchid_hybrid where pid not in (select distinct did from orchid_ancestordescendant)
+    			order by pid;";
     &getASPM($stmt);
     while (my @row = $sth->fetchrow_array()) {
         $pid{$row[0]}++;

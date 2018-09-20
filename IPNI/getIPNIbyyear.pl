@@ -50,7 +50,7 @@ sub getPIDfromfile {
     my $i = 0;
     # Submit form and write to input dir.
     my $url = "http://www.ipni.org/ipni/advPlantNameSearch.do?find_includePublicationAuthors=on&find_includePublicationAuthors=off&find_includeBasionymAuthors=on&find_includeBasionymAuthors=off&show_extras=on&find_isAPNIRecord=on&find_isAPNIRecord=false&find_isGCIRecord=on&find_isGCIRecord=false&find_isIKRecord=on&find_isIKRecord=false&find_rankToReturn=all&output_format=delimited&find_sortByFamily=off&query_type=by_query&back_page=plantsearch";
-    $url .= "&find_family=" . $family . "&find_modifiedSince=" . $date . "-01-01&find_addedSince=" . $date . "-01-01";
+    $url .= "&find_family=" . $family . "&find_modifiedSince=" . $date . "&find_addedSince=" . $date;
     print "$url\n";
     my $mech = WWW::Mechanize->new;
     $mech->get($url);
@@ -62,7 +62,7 @@ sub getPIDfromfile {
     print INPUT $file;
     close INPUT;
     my(@lines) = split(/\n/,$file);
-    open OUT, ">data/new.txt";
+    open OUT, ">:utf8","data/new.txt";
     foreach my $line (@lines) {
         $line =~ s/\'/\'\'/g;
         my($pid,$source,$genus,$species,$infraspr,$infraspe,$author,$citation,$status,$type,$year,$distribution,$description,$is_hybrid)
@@ -92,26 +92,36 @@ sub getPIDfromfile {
         next if $citation =~ /inval\.$/;
         $year = $1;
         $distribution = $recs[26];
-        my $name = $genus.$species.$infraspr.$infraspe;
+        my $name = $genus.$species;
+        $name   .= $infraspr if $infraspr;
+        $name   .= $infraspe if $infraspe;
 
-        next if $oldname{$name};
+        next if exists $oldname{$name};
         print "$pid\t>$name<\n";
         #print "$pid\t$genus $is_hybrid $species $author\t$citation\t$type\t$year\t$distribution\t$description\n";
         print OUT "$pid\t\t$source\t$genus\t$species\t$infraspr\t$infraspe\t$author\t$citation\t$status\t$type\t$year\t\t$distribution\t\t$description\n";
-        my $stmt = "insert ignore into orchid_species_ipni (pid,source,genus,species,infraspr,infraspe,author,citation,status,type,year,distribution,description,is_hybrid)
+        my $stmt = "insert ignore into orchid_species_ipni_xfer (pid,source,genus,species,infraspr,infraspe,author,citation,status,type,year,distribution,description,is_hybrid)
                     values ('$pid','$source','$genus','$species','$infraspr','$infraspe','$author','$citation','$status','$type','$year','$distribution','$description','$is_hybrid')";
         getASPM($stmt);
     }
 }
 
 sub getPID {
-    my $stmt = "select genus,species,infraspr,infraspe from orchid_species";
+    my $stmt = "select pid,genus,species,infraspr,infraspe from orchid_species";
     getASPM($stmt);
 	while (my @row = $sth->fetchrow_array()) {
-        my $name = $row[0].$row[1];
-        $name .= $row[2] if $row[2];
+        my $name = $row[1].$row[2];
         $name .= $row[3] if $row[3];
-        $oldname{$name}++;
+        $name .= $row[4] if $row[4];
+        $oldname{$name} = $row[0];
+	}
+    $stmt = "select pid,genus,species,infraspr,infraspe from orchid_species_ipni_xfer";
+    getASPM($stmt);
+	while (my @row = $sth->fetchrow_array()) {
+        my $name = $row[1].$row[2];
+        $name .= $row[3] if $row[3];
+        $name .= $row[4] if $row[4];
+        $oldname{$name} = $row[0];
 	}
 
 

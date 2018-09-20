@@ -87,7 +87,7 @@ my $url  = "http://apps.kew.org/wcsp/namedetail.do?name_id=";
 my $synurl  = "http://wcsp.science.kew.org/synonomy.do?name_id=";
 require "common.pl";
 our ($sth);
-my (%pid, %oldpid, %newpid, %name, %oldname, %oldauth);
+my (%pid, %oldpid, %newpid, %name, %oldname, %oldgenus, %oldspecies, %oldinfraspr, %oldinfraspe, %oldauth);
 #my ($status, $lifeform, $distribution, $family, $count);
 
 # Directorues
@@ -97,7 +97,8 @@ my $pid2dir = "data/pid2/";
 my $resdir = "data/results/";
 
 my $new = "new.txt";
-my $changed = "changed.txt";
+my $changed  = "changed_status.txt";
+my $changed2 = "changed_name.txt";
 my $type = 'species';
 
 # my $year = $ARGV[0];
@@ -119,7 +120,7 @@ for (my $year = $start; $year < $end; $year++) {
 
 #----- 3) Compare query results with current
 my ($change_count, $new_count) = (0,0);
-open OUT, ">data/results/newspecies.dat" or die "Cant open file: $!\n";
+open OUT, ">:utf8","data/results/newspecies.dat" or die "Cant open file: $!\n";
 print OUT "pid\tgen\tsource\tgenus\tspecies\tinfraspe\tinfraspr\tauthor\tcitation\tstatus\ttype\tyear\t\tdistribution\tlifeform\n";
 for (my $year = $start; $year < $end; $year++) {
 	print "2) Compare $year pid with existing pid...";
@@ -178,15 +179,21 @@ sub comparePid {
 
     getOldPid();
     #print "2.1>>>$oldpid{25329}\n";
-    open (CHG, ">".$resdir."$changed") or die "Cannot open input file $changed: $!\n";
-    open (NEW, ">".$resdir."$new") or die "Cannot open input file $new: $!\n";
+    open (CHG, ">:utf8",$resdir."$changed") or die "Cannot open input file $changed: $!\n";
+    open (CHG2, ">:utf8",$resdir."$changed2") or die "Cannot open input file $changed: $!\n";
+    open (NEW, ">:utf8",$resdir."$new") or die "Cannot open input file $new: $!\n";
+    open (GEN, ">:utf8",$resdir."changed_genus.dat") or die "Cannot open input file changed_genus.dat: $!\n";
+    open (SPC, ">:utf8",$resdir."changed_species.dat") or die "Cannot open input file changed_species.dat: $!\n";
+    open (INE, ">:utf8",$resdir."changed_infraspe.dat") or die "Cannot open input file changed_infraspe.dat: $!\n";
+    open (INR, ">:utf8",$resdir."changed_infraspr.dat") or die "Cannot open input file changed_infraspr.dat: $!\n";
 	opendir (my $dir, $pid1dir) or die "Cant open directory $pid1dir: $!\n";
     my @files = readdir($dir);
     close $dir;
 	my $count = 0;
-	my %seenpid;
+    my %seenpid;
     # foreach my $pid1 (@files) {
 	for (my $year = $start; $year < $end; $year++) {	
+    	my $newname = '';
         # next if $pid1 !~ /^pid1_(\d{4})/;
         # my $year = $1;
 		my $pid1 = $pid1dir . "pid1_" . $year . ".txt";
@@ -197,23 +204,55 @@ sub comparePid {
         while (<PID1>) {
             chomp;
             my @data = split(/\t/,$_);
-            next if $seenpid{$data[0]}++;
+            my $newname = "$data[1] $data[2]";
+            $newname .= " " . $data[3] if $data[3];
+            $newname .= " " . $data[4] if $data[4];
+            # next if $seenpid{$data[0]}++;
             print "2.2) @data\n" if $debug;
             # Skip illegal citation
             next if $data[6] =~ /Nom\.* illeg/i;
-            print "2.3) $data[0]\t$oldpid{$data[0]}\n" if $debug;
+            print "2.3) $data[0]\told = $oldname{$data[0]}\tnew = $newname\n" if $debug;
     #        $pid{$data[0]} = $data[1];
             if (exists($oldpid{$data[0]})) {
-                if ($oldpid{$data[0]} ne $data[8]) {
+                if ($oldpid{$data[0]} ne $data[8] or $oldname{$data[0]} ne $newname) {
                     #print "$data[0]\t$oldpid{$data[0]}\t$data[1]\n";
                     #print RES "$data[0]\t$oldpid{$data[0]}\t$data[5]\t$_\n" ;
                     
-					if ($oldpid{$data[0]} eq "accepted" or $data[8] eq "accepted") {
+					if (($oldpid{$data[0]} eq "accepted" and $data[8] ne "accepted") or
+                        ($oldpid{$data[0]} eq "unplaced" and $data[8] eq "accepted") or
+                        ($oldpid{$data[0]} eq "synonym" and $data[8] eq "accepted")){
+    					print "\t$oldpid{$data[0]} ne $data[8]\n"; # if $debug;
 						$change_count++;
-						print CHG "$data[0]\t$oldpid{$data[0]}\t$data[5]\t$_\n"
+						print CHG "$data[0]\told = >$oldname{$data[0]}<\tnew = >$newname<\toldstatus = >$oldpid{$data[0]}<\tnewstatus = >$data[8]<\n"; #\t($_)\n"
 					}
-					print "\t$oldpid{$data[0]} ne $data[8]\n" if $debug;
+					else {
+                        if ($oldname{$data[0]} ne $newname) {
+                            print "\t$oldname{$data[0]} ne $newname\n"; # if $debug;
+                            $change_count++;
+                            print CHG2 "$data[0]\told = >$oldname{$data[0]}<\tnew = >$newname<\toldstatus = >$oldpid{$data[0]}<\tnewstatus = >$data[8]<\n"; #\t($_)\n"
+                        }
+					}
 				}
+                if ($oldgenus{$data[0]} ne $data[1]){
+                    print "\tGenus changed $oldgenus{$data[0]} ne $data[1]\n"; # if $debug;
+                    $change_count++;
+                    print GEN "$data[0]\tnew genus = >$data[1]<\told genus = >$oldgenus{$data[0]}<\n";
+                }
+                if ($oldspecies{$data[0]} ne $data[2]){
+                    print "\tSpecies changed $oldspecies{$data[0]} ne $data[2]\n"; # if $debug;
+                    $change_count++;
+                    print SPC "$data[0]\tnew species = >$data[2]<\told species = >$oldspecies{$data[0]}<\n";
+                }
+                if ($oldinfraspr{$data[0]} and $oldinfraspr{$data[0]} ne $data[3]){
+                    print "\tInfraspr changed $oldspecies{$data[0]} ne $data[3]\n"; # if $debug;
+                    $change_count++;
+                    print INR "$data[0]\tnew infraspr = >$data[3]<\told infraspr = >$oldinfraspr{$data[0]}<\n";
+                }
+                if ($oldinfraspe{$data[0]} and $oldinfraspe{$data[0]} ne $data[4]){
+                    print "\tInfraspe changed $oldinfraspe{$data[0]} ne $data[4]\n"; # if $debug;
+                    $change_count++;
+                    print INE "$data[0]\tnew infraspe = >$data[4]<\told infraspe = >$oldinfraspe{$data[0]}<\n";
+                }
             }
             else {
                #print "$data[0] $_\n";
@@ -332,7 +371,7 @@ sub getPIDfromfile {
 		
         my $pid1 = "pid1_$year.txt";
         my $count = 0;
-        open PID1, ">$pid1dir$pid1" or die "Can't open $pid1 - $1\n";
+        open PID1, ">:utf8",$pid1dir.$pid1 or die "Can't open $pid1 - $1\n";
         open INPUT, "data/input/kew_$year.html" or die "Can't open file.html\n";
         while (<INPUT>) {
             next if $_ !~ /name_id=(\d+).*<i>([A-Za-z-]+)<\/i><i> ([a-z-]+)<\/i> (.+)<\/a>/;
@@ -394,7 +433,7 @@ sub getPID {
         next if $file !~ /^kew_(\d{4})/;
         my $year = $1;
         my $pid1 = "pid1_$year.txt";
-        open PID1, ">$pid1dir$pid1" or die "Can't open $pid1 - $1\n";
+        open PID1, ">:utf8",$pid1dir.$pid1 or die "Can't open $pid1 - $1\n";
         open INPUT, $inputdir.$file or die "Can't open $pid1 - $1\n";
         while (<INPUT>) {
             next if $_ !~ /name_id=(\d+).*<i>([A-Za-z-]+)<\/i><i> ([a-z-]+)<\/i> (.+)<\/a>/;
@@ -455,5 +494,9 @@ sub getOldPid {
         $oldname{$row[0]} .= " $row[5]" if $row[5];
         $oldname{$row[0]} =~ s/ +$//;
         $oldauth{$row[0]} = $row[6];
+        $oldgenus{$row[0]} = $row[2];
+        $oldspecies{$row[0]}  = $row[3];
+        $oldinfraspr{$row[0]} = $row[4] if $row[4];
+        $oldinfraspe{$row[0]} = $row[5] if $row[5];
     }
 }

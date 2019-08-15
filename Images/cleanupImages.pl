@@ -7,30 +7,28 @@
 #	4. Update table set genus id, width, height of each image
 use strict;
 use warnings qw(all);
-use autodie;
+# use autodie;
 use File::Copy;   #Gives you access to the "move" command
 use DBI;
-use DBD::ODBC;
+# use DBD::ODBC;
 
 # require "common.pl";
 my ($sth);
 my $stmt;
 my $mediaroot = 'C:/projects/orchids/orchidproject/static/utils/images/';
-   # $mediaroot = '/home/chariya/webapps/static_media/utils/images/';
+   $mediaroot = '/home/chariya/webapps/static_media/utils/images/';
 my $discard_file = $mediaroot."discard_file/";
-my $discard_thmb = $mediaroot."discard_thmb/";
 
 system( 'mkdir '.$discard_file ) if ( ! -d $discard_file );
-system( 'mkdir '.$discard_thmb ) if ( ! -d $discard_thmb );
 
 # Database connection
-my $dbh = DBI->connect( "DBI:ODBC:Bluenanta") or die( "Could not connect to: $DBI::errstr" );
+my $dbh = DBI->connect( "DBI:mysql:orchidroots","chariya","imh3r3r3") or die( "Could not connect to: $DBI::errstr" );
 my $DB = "orchidroots";
 &getASPM("use $DB");
 
 my @type = ("species","hybrid");
 my %type = (species=>"spc", hybrid=>"hyb");
-my %tab  = (species=>"orchid_spcimages", hybrid=>"orchid_hybimages");
+my %tab  = (species=>"orchiddb_spcimages", hybrid=>"orchiddb_hybimages");
 my %files = ();
 
 foreach my $type (@type) {
@@ -47,7 +45,6 @@ foreach my $type (@type) {
 sub processFiles {
 	my $type = shift;
 	my $image_dir = $mediaroot . $type . '/';
-	my $thumb_dir = $mediaroot . $type . '_thumb/';
 
     opendir(my $dh, $image_dir) or die "cant open $image_dir : $!\n";
 	print "image dir = $image_dir\n";
@@ -59,8 +56,6 @@ sub processFiles {
 		print $i++."\t$_\n";
 		my $from = $image_dir .  $_;
 		move $from, $discard_file;
-		my $from_tmb = $thumb_dir  . $_;
-		move $from_tmb, $discard_thmb;
 	}
 	print "\n\tMoved $i $type image files to discard folder\n";
 }
